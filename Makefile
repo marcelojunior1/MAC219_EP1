@@ -18,3 +18,4 @@ $(OUTPUT)_pth: $(OUTPUT)_pth.c
 .PHONY: clean
 clean:
 	rm -f $(OUTPUT) $(OUTPUT)_pth output.ppm
+	
