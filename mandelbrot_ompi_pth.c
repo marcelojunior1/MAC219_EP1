@@ -28,7 +28,7 @@ double pixel_height;
 int iteration_max = 200;
 
 int image_size;
-unsigned char **image_buffer;
+unsigned char *image_buffer;
 
 int i_x_max;
 int i_y_max;
@@ -129,12 +129,10 @@ void* funcao_thread (void *t_data)
 
 void allocate_image_buffer()
 {
-    int rgb_size = 3;
-    image_buffer = (unsigned char **) malloc(sizeof(unsigned char *) * image_buffer_size);
 
-    for(int i = 0; i < image_buffer_size; i++){
-        image_buffer[i] = (unsigned char *) malloc(sizeof(unsigned char) * rgb_size);
-    };
+    int rgb_size = 3;
+    image_buffer = malloc(sizeof(char) * image_buffer_size* rgb_size);
+
 };
 
 void init(int argc, char *argv[])
@@ -167,18 +165,20 @@ void update_rgb_buffer(int iteration, int x, int y)
 
     y = y - taskid*qtd_linhas;
 
-    if(iteration == iteration_max){
-        image_buffer[(i_y_max * y) + x][0] = colors[gradient_size][0];
-        image_buffer[(i_y_max * y) + x][1] = colors[gradient_size][1];
-        image_buffer[(i_y_max * y) + x][2] = colors[gradient_size][2];
+    if(iteration == iteration_max)
+    {
+        image_buffer[((i_y_max * y) + x) * 3]       = colors[gradient_size][0];
+        image_buffer[((i_y_max * y) + x) * 3 + 1]   = colors[gradient_size][1];
+        image_buffer[((i_y_max * y) + x) * 3 + 2]   = colors[gradient_size][2];
     }
-    else{
+    else
+    {
         color = iteration % gradient_size;
 
-        image_buffer[(i_y_max * y) + x][0] = colors[color][0];
-        image_buffer[(i_y_max * y) + x][1] = colors[color][1];
-        image_buffer[(i_y_max * y) + x][2] = colors[color][2];
-    };
+        image_buffer[((i_y_max * y) + x) * 3]       = colors[color][0];
+        image_buffer[((i_y_max * y) + x) * 3 + 1]   = colors[color][1];
+        image_buffer[((i_y_max * y) + x) * 3 + 2]   = colors[color][2];
+    }
 };
 
 void write_to_file()
@@ -188,9 +188,16 @@ void write_to_file()
     int max_color_component_value = 255;
     
     MPI_File     fh; 
+    MPI_Request request;
+    MPI_Datatype arraytype;
+    MPI_Offset disp;
+    MPI_Status status;
+    int message;
 
-    MPI_File_open(MPI_COMM_WORLD, "output.ppm", 
-            MPI_MODE_CREATE | MPI_MODE_RDWR, MPI_INFO_NULL, &fh);
+
+    MPI_Type_contiguous(3, MPI_CHAR, &arraytype);
+    MPI_Type_commit(&arraytype);
+
 
     int access_mode = MPI_MODE_CREATE /* Create the file if it does not exist */
                     | MPI_MODE_WRONLY; /* With write-only access */
@@ -202,25 +209,19 @@ void write_to_file()
     }
 
     unsigned int qtd = 3*image_buffer_size * taskid + 24;
-    MPI_File_seek(fh, qtd, MPI_SEEK_SET);
 
     if (taskid == 0)
     {
-        MPI_File_seek(fh, 0, MPI_SEEK_SET);
-
         char str[50];
         sprintf(str, "P6\n %s\n %d\n %d\n %d\n", 
             comment, i_x_max, i_y_max, max_color_component_value);
 
-        MPI_File_write(fh, str, strlen(str), MPI_CHAR, MPI_STATUS_IGNORE);
+        MPI_File_write_shared(fh, str, strlen(str), MPI_CHAR, MPI_STATUS_IGNORE);
     }
 
+    MPI_File_set_view(fh, qtd, MPI_BYTE, MPI_UNSIGNED_CHAR, "native", MPI_INFO_NULL);
 
-    for (int i = 0; i < image_buffer_size; ++i)
-    {
-        MPI_File_write(fh, image_buffer[i], 3, MPI_UNSIGNED_CHAR, MPI_STATUS_IGNORE);
-    }
-
+    MPI_File_iwrite_all (fh, image_buffer, image_buffer_size, arraytype, &request);
 };
 
 void compute_mandelbrot()
@@ -309,8 +310,7 @@ int main(int argc, char *argv[])
 
     clock_gettime(CLOCK_MONOTONIC, &t5);
 
-    printf("TEMPOS %d: %f %f\n", 
-        taskid, (tempo(t1, t2) + tempo(t4, t5) ), tempo(t2, t3));
+    printf("TEMPOS %d: %f %f %f\n",  taskid, tempo(t1, t2), tempo(t2, t3), tempo(t4, t5));
 
     MPI_Finalize();
 
