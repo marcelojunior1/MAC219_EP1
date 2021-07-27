@@ -188,7 +188,7 @@ void write_to_file()
     int max_color_component_value = 255;
     
     MPI_File     fh; 
-    MPI_Request request;
+    MPI_Request request = MPI_REQUEST_NULL;
     MPI_Datatype arraytype;
     MPI_Offset disp;
     MPI_Status status;
@@ -221,7 +221,8 @@ void write_to_file()
 
     MPI_File_set_view(fh, qtd, MPI_BYTE, MPI_UNSIGNED_CHAR, "native", MPI_INFO_NULL);
 
-    MPI_File_iwrite_all (fh, image_buffer, image_buffer_size, arraytype, &request);
+    MPI_File_write(fh, image_buffer, image_buffer_size, arraytype, MPI_STATUS_IGNORE);
+
 };
 
 void compute_mandelbrot()
