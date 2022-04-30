@@ -1,12 +1,17 @@
-# Programação paralela: Cálculo e visualização do Conjunto de Mandelbrot.
+# Programação Paralela
+# Cálculo e visualização do Conjunto de Mandelbrot.
 
-- O Makefile compila as três implementações que geram imagens do conjunto. Ao executar, cada implementação devolve o tempo de renderização da imagem e de escrita no arquivo.
+- O Makefile compila as três implementações que geram imagens do conjunto. Ao executar, cada implementação devolve o tempo de renderização e de escrita da imagem.
 
 * Necessário instalação do OpenMP e Pthreads.
 
 Exemplos:
 
-![plot](./img/1.jpg)
-![plot](./img/2.jpg)
-![plot](./img/3.jpg)
-![plot](./img/4.jpg)
+<p align="center">
+<img src="img/1.jpg" width="400" height="400" />
+  <img src="img/2.jpg" width="400" height="400" />
+</p>
+<p align="center">
+<img src="img/3.jpg" width="400" height="400" />
+  <img src="img/4.jpg" width="400" height="400" />
+</p>
